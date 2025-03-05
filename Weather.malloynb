@@ -1,0 +1,126 @@
+>>>malloy
+source: LosAngeles is duckdb.table('LosAngeles.csv') extend {
+    dimension: AvgTemp is AvgTemperature::number
+    dimension: MaxTemp is MaxTemperature::number
+    dimension: MinTemp is MinTemperature::number
+    dimension: Precip_no_M is replace(Precipitation, 'M', '0')
+    dimension: RainSnow is replace(Precip_no_M, 'T', '0')::number
+    dimension: SnowDep is replace(SnowDepth, 'M', '0')::number
+    dimension: Snow_no_M is replace(Snowfall, 'M', '0')
+    dimension: Snow is replace(Snow_no_M, 'T', '0')::number
+}
+>>>markdown
+What is average temperature of Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    aggregate: AverageTemp is avg(AvgTemp)
+}
+>>>markdown
+What is the average temperature by year and month?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.year
+    aggregate: AverageTemp is avg(AvgTemp)
+    # bar_chart
+    nest: MonthlyAvg is {
+        group_by: `Date`.Month
+        aggregate: AverageTemp is avg(AvgTemp)
+        # tooltip
+        aggregate: RainDays is count(RainSnow) {where: RainSnow > 0}
+    }
+}
+>>>markdown
+What was the hottest year in Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.year
+    aggregate: AverageTemp is avg(AvgTemp)
+    order_by: AverageTemp desc
+}
+>>>markdown
+What was the coldest year in Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.year
+    aggregate: AverageTemp is avg(AvgTemp)
+    order_by: AverageTemp asc
+}
+>>>markdown
+What was the hottest day in Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.day
+    aggregate: AverageTemp is avg(AvgTemp)
+    order_by: AverageTemp desc
+}
+>>>markdown
+What was the coldest day in Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.day
+    aggregate: AverageTemp is avg(AvgTemp)
+    order_by: AverageTemp asc
+}
+>>>markdown
+What is the hottest temperature ever recorded in Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.day, MaxTemp
+    order_by: MaxTemp desc
+}
+>>>markdown
+What is the coldest temperature ever recorded in Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.day, MinTemp
+    order_by: MinTemp asc
+}
+>>>markdown
+How much rainfall does Los Angeles get per year?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.year
+    aggregate: Rain is sum(RainSnow)
+}
+>>>markdown
+What is the most rain Los Angeles has received in a day?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.day
+    aggregate: Rain is sum(RainSnow)
+    order_by: Rain desc
+}
+>>>markdown
+How many days a year does it rain in Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.year
+    aggregate: RainDays is count(RainSnow)
+}
+>>>markdown
+What is the rainiest year recorded in Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.year
+    aggregate: RainAmount is sum(RainSnow)
+    order_by: RainAmount desc
+}
+>>>markdown
+What is the most amount of snow Los Angeles has ever received in a day?
+>>>malloy
+run: LosAngeles -> {
+    group_by: `Date`.day
+    aggregate: Snow is sum(Snow)
+    order_by: Snow desc
+}
+>>>markdown
+How many times has it snowed in Los Angeles?
+>>>malloy
+run: LosAngeles -> {
+    aggregate: SnowDays is count(Snow)
+    nest: SnowYear is {
+        group_by: `Date`.year
+        aggregate: SnowDays is count(Snow)
+        where: Snow > 0
+    }
+}
